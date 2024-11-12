@@ -1,0 +1,334 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <windows.h>
+
+
+typedef struct Usuario{
+    char nome  [50][20];
+    char senha [50][20];
+    int totalUsuarios;
+}Usuarios;
+
+Usuarios usuarios = { .totalUsuarios = 0};
+
+// Função para criptografar uma string
+void criptografar(char *str) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        str[i] += 3; // Soma 3 ao valor ASCII de cada caractere
+    }
+}
+
+// Função para descriptografar uma string
+void descriptografar(char *str) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        str[i] -= 3; // Subtrai 3 do valor ASCII de cada caractere
+    }
+}
+
+
+// Fucao inserir usuarios
+void inserirUsuarios(char nome[20], char senha[20]) {
+    if (usuarios.totalUsuarios < 50) {
+        // Criptografa o nome e a senha antes de armazená-los
+        criptografar(nome);
+        criptografar(senha);
+
+        // Copiando a string recebia e passando para dentro da lista 
+        strcpy(usuarios.nome[usuarios.totalUsuarios], nome);
+        strcpy(usuarios.senha[usuarios.totalUsuarios], senha);
+        usuarios.totalUsuarios++;
+
+        gotoxy(30, 14); printf("+----------------------------------------------------+\n");
+        gotoxy(30, 15); printf("|    Usuario '%s' cadastrado com sucesso!\n", nome);
+        gotoxy(83, 15); printf("|\n");
+        gotoxy(30, 16); printf("+----------------------------------------------------+\n");
+    }
+}
+
+
+// Função para remover usuario
+void removerUsuario(char nome[20]) {  
+    int encontrado = 0;
+    for (int i = 0; i < usuarios.totalUsuarios; i++) {
+        if (strcmp(nome, usuarios.nome[i]) == 0) {
+            // Move os usuários seguintes para preencher o espaço removido
+            for (int j = i; j < usuarios.totalUsuarios - 1; j++) {
+                strcpy(usuarios.nome[j], usuarios.nome[j + 1]);
+                strcpy(usuarios.senha[j], usuarios.senha[j + 1]);
+            }
+            usuarios.totalUsuarios--;
+            gotoxy(30, 13); printf("+----------------------------------------------------+\n");
+            gotoxy(30, 14); printf("|     Usuario '%s' removido com sucesso!\n", nome);
+            gotoxy(30, 83); printf("|\n");
+            gotoxy(30, 15); printf("+----------------------------------------------------+\n");
+            encontrado = 1;
+            break;
+        }
+    }
+    if (!encontrado) {
+        gotoxy(30, 20); printf("+----------------------------------------------------+\n");
+        gotoxy(30, 21); printf("|          Usuario '%s' nao encontrado!\n", nome);
+        gotoxy(30, 21); printf("|\n");
+        gotoxy(30, 22); printf("+----------------------------------------------------+\n");
+    }
+}
+
+// Funcção para consultar os Usuarios
+void consultarUsuarios() {
+    int c = 9;
+    
+    system("cls");
+    gotoxy(30, 6);  printf("+----------------------------------------------------+\n");
+    gotoxy(30, 7);  printf("|               LISTAGEM DE USUARIOS                 | \n");
+    gotoxy(30, 8);  printf("+----------------------------------------------------+\n");
+    if (usuarios.totalUsuarios == 0) {
+        gotoxy(30, 9);  printf("            Nenhum usuario cadastrado.\n");
+    }
+    for (int i = 0; i < usuarios.totalUsuarios; i++) {
+        gotoxy(38,c); printf("Usuario %d: %s\n", i + 1, usuarios.nome[i]);
+        c++;
+    }
+
+    gotoxy(30,29);  printf("+----------------------------------------------------+\n");
+}
+
+// Funcção para Exportar arquivo .txt
+void exportarUsuarios(const char *filename) {
+    FILE *file = fopen(filename, "wt");  // Abre o arquivo em modo de escrita de texto
+    if (file == NULL) {
+        system("cls");
+        gotoxy(30,12); printf("+----------------------------------------------------+\n");
+        gotoxy(30,13); printf("|   Erro ao abrir o arquivo para exportação.         |\n");
+        gotoxy(30,14); printf("+----------------------------------------------------+\n");
+        return;
+    }
+
+    int result;
+
+    // Cabeçalho do arquivo
+    result = fputs("Lista de Usuários Cadastrados:\n", file);
+    if (result == EOF) {
+        system("cls");
+        gotoxy(30,12); printf("+----------------------------------------------------+\n");
+        gotoxy(30,13); printf("|   Erro na gravação do cabeçalho.                   |\n");
+        gotoxy(30,14); printf("+----------------------------------------------------+\n");
+    }
+
+    // Grava cada usuário e senha
+    for (int i = 0; i < usuarios.totalUsuarios; i++) {
+        result = fprintf(file, "Usuário %d: %s, Senha: %s\n", i + 1, usuarios.nome[i], usuarios.senha[i]);
+        if (result == EOF) {
+            system("cls");
+            gotoxy(30,12); printf("+----------------------------------------------------+\n");
+            gotoxy(30,13); printf("|   Erro na gravação do usuário %d.                  |\n", i + 1);
+            gotoxy(30,14); printf("+----------------------------------------------------+\n");
+            break;
+        }
+    }
+
+    fclose(file);
+
+    gotoxy(30,12); printf("+----------------------------------------------------+\n");
+    gotoxy(30,13); printf("|   Usuarios exportados com sucesso para '%s'.       \n", filename);
+    gotoxy(83,13); printf("|");
+    gotoxy(30,14); printf("+----------------------------------------------------+\n");
+}
+
+
+
+// Função para Importar arquivos .txt
+void importarUsuarios(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        
+        gotoxy(30,13);  printf("+----------------------------------------------------+\n");
+        gotoxy(30,14);  printf("|   Erro ao abrir o arquivo para importacao          |\n");
+        gotoxy(30,15);  printf("+----------------------------------------------------+\n");
+    
+        return;
+    }
+
+    usuarios.totalUsuarios = 0;
+    while (fscanf(file, "%s %s", usuarios.nome[usuarios.totalUsuarios], usuarios.senha[usuarios.totalUsuarios]) == 2) {
+        usuarios.totalUsuarios++;
+        if (usuarios.totalUsuarios >= 50) {
+            printf("Limite de usuarios atingido durante a importacao.\n");
+            break;
+        }
+    }
+    fclose(file);
+    printf("Usuarios importados com sucesso de '%s'.\n", filename);
+}
+
+// Função para exibir créditos
+void mostrarCreditos() {
+    printf("Sistema CRUD Basico\n");
+    printf("Desenvolvido por [Seu Nome]\n");
+}
+
+// Função gotoxy
+void gotoxy(int x, int y) {
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+void exibirmMenuPrincipal(){
+    system("cls");
+    gotoxy(30, 6);  printf("+----------------------------------------------------+");
+    gotoxy(30, 7);  printf("|               CADASTRO DE USUARIO                  |\n");
+    gotoxy(30, 8);  printf("+----------------------------------------------------+");
+    gotoxy(30, 9);  printf("|                                                    |\n");
+    gotoxy(30,10);  printf("|            1. Cadastrar Usuario                    |\n");
+    gotoxy(30, 11); printf("|                                                    |\n");
+    gotoxy(30, 12); printf("|            2. Remover Usuario                      |\n");
+    gotoxy(30, 13); printf("|                                                    |\n");
+    gotoxy(30, 14); printf("|            3. Consultar Usuario                    |\n");
+    gotoxy(30, 15); printf("|                                                    |\n");
+    gotoxy(30, 16); printf("|            4. Exportar                             |\n");
+    gotoxy(30, 17); printf("|                                                    |\n");
+    gotoxy(30, 18); printf("|            5. Importar                             |\n");
+    gotoxy(30, 19); printf("|                                                    |\n");  
+    gotoxy(30, 20); printf("|            0. Saindo                               |\n");
+    gotoxy(30, 21); printf("+----------------------------------------------------+\n");
+    gotoxy(30, 22); printf("|            Escolha uma opcao: ");
+    gotoxy(83, 22); printf("|\n");
+    gotoxy(30, 23); printf("+----------------------------------------------------+\n");
+}
+
+void exibirMenuCadastroProduto(){
+
+    system("cls");
+    gotoxy(30, 6);  printf("+----------------------------------------------------+");
+    gotoxy(30, 7);  printf("|                CADASTRO DE USUARIO                 |\n");
+    gotoxy(30, 8);  printf("+----------------------------------------------------+");
+    gotoxy(30, 9);  printf("|                                                    |\n");
+    gotoxy(30,10);  printf("| Digite o Nome de Usuario          : ");
+    gotoxy(83,10);  printf("|");
+    gotoxy(30,11);  printf("|                                                    |\n");
+    gotoxy(30,12);  printf("| Digite a Senha do Usuario         : ");
+    gotoxy(83,12);  printf("|");
+    gotoxy(30,13);  printf("|                                                    |\n");
+    gotoxy(30,14);  printf("+----------------------------------------------------+");
+
+}
+
+
+
+
+int main() {
+    int opcao;
+    char nome   [20];
+    char senha  [20];
+    char nSenha [20];
+    int c;
+    char filename[50];
+
+    do {
+
+       exibirmMenuPrincipal();
+       gotoxy(62,22); scanf("%d", &opcao);
+       getchar();
+
+        switch (opcao)
+        {
+        case 1:// Inserir
+            
+            system("cls");
+            exibirMenuCadastroProduto();
+            gotoxy(68,10); scanf("%s", nome);
+            gotoxy(68,12); scanf("%s", senha);
+
+            inserirUsuarios(nome,senha);
+
+            system("pause");
+            break;
+        case 2:
+
+            system("cls");
+            gotoxy(30, 6);  printf("+----------------------------------------------------+");
+            gotoxy(30, 7);  printf("|                REMOVER CLIENTE                     |\n");
+            gotoxy(30, 8);  printf("+----------------------------------------------------+");
+            gotoxy(30, 9);  printf("|                                                    |");
+            gotoxy(30,10);  printf("|  Digite o Usuario do Cliente a ser removido!       |");
+            gotoxy(30,11);  printf("|                                                    |");
+            gotoxy(30,12);  printf("|           Usuario: ");
+            gotoxy(83,12);  printf("|");
+            gotoxy(30,13);  printf("|                                                    |");
+            gotoxy(30,14);  printf("+----------------------------------------------------+");
+            
+            gotoxy(52,12); scanf("%d", &nome);
+
+            removerUsuario(nome);
+            system("pause");
+            
+            break;
+        case 3:
+            system("cls");
+            consultarUsuarios();
+            system("pause");
+            break;
+        case 4: 
+            system("cls");
+            gotoxy(30, 6);  printf("+----------------------------------------------------+");
+            gotoxy(30, 7);  printf("|                EXPORTAR ARQUIVO                    |\n");
+            gotoxy(30, 8);  printf("+----------------------------------------------------+");
+            gotoxy(30, 9);  printf("|                                                    |\n");            
+            gotoxy(30,10);  printf("|  Digite o nome do Arquivo : ");
+            gotoxy(83,10);  printf("|");
+            gotoxy(30,11);  printf("|                                                    |\n");
+            gotoxy(30,12);  printf("+----------------------------------------------------+\n");
+            gotoxy(60, 10); scanf("%s", filename);
+            exportarUsuarios(filename);
+            system("pause");
+            break;
+
+        case 5: 
+            system("cls");
+            gotoxy(30, 6);  printf("+----------------------------------------------------+");
+            gotoxy(30, 7);  printf("|                IMPORTAR ARQUIVO                    |\n");
+            gotoxy(30, 8);  printf("+----------------------------------------------------+");
+            gotoxy(30, 9);  printf("|                                                    |\n");            
+            gotoxy(30,10);  printf("|  Digite o nome do Arquivo : ");
+            gotoxy(83,10);  printf("|");
+            gotoxy(30,11);  printf("|                                                    |\n");
+            gotoxy(30,12);  printf("+----------------------------------------------------+\n");
+            gotoxy(60,10); scanf("%s", filename);
+            importarUsuarios(filename);
+            system("pause");
+            break;
+
+        case 0: 
+
+            gotoxy(30,21);printf("   ");
+            gotoxy(30,22);printf("   ");
+            gotoxy(30,23);printf("   ");
+
+            gotoxy(30, 21); printf("+----------------------------------------------------+\n");
+            gotoxy(30, 22); printf("                     Saindo...        \n");
+            gotoxy(30, 22); printf("|\n");
+            gotoxy(30, 23); printf("+----------------------------------------------------+\n");
+            exit(0);
+            break;
+        
+        default:
+
+            gotoxy(30,21);printf("   ");
+            gotoxy(30,22);printf("   ");
+            gotoxy(30,23);printf("   ");
+
+            gotoxy(30,21); printf("+----------------------------------------------------+\n");
+            gotoxy(30,22); printf("          Opcao invalida. Tente novamente.\n");
+            gotoxy(30,22); printf("|\n");
+            gotoxy(30,23); printf("+----------------------------------------------------+\n");
+            system("pause");
+            break;
+        } 
+    } while (opcao !=0);
+
+    return 0;
+
+}
